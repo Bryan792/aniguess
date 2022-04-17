@@ -223,8 +223,7 @@ const Home = (props) => {
               </Stack>
               <h6>Synopsis:</h6>
               {gameState.status !== STATUS_PENDING ||
-              gameState.guesses.length >= 5 ||
-              true ? (
+              gameState.guesses.length >= 5 ? (
                 <h6>
                   {gameState.status !== STATUS_PENDING
                     ? answer.description
@@ -321,7 +320,7 @@ const Home = (props) => {
                       onClick={() => {
                         let shareText = `Aniguess ${gameState.gameNumber}\n\n`
                         //if (gameState.status === STATUS_SOLVED)
-                          //shareText += '🔊'
+                        //shareText += '🔊'
                         //else shareText += '🔇'
                         for (let i = 0; i < 6; i++) {
                           let guess = gameState.guesses[i]
