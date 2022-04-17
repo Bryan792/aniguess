@@ -14,7 +14,7 @@ import {
   ToastContainer,
 } from 'react-bootstrap'
 
-import { Typeahead } from 'react-bootstrap-typeahead' // ES2015
+import { Typeahead, Highlighter } from 'react-bootstrap-typeahead' // ES2015
 
 import Header from 'components/Header'
 import GuessList from 'components/GuessList'
@@ -40,9 +40,9 @@ const NewGameState = {
   status: STATUS_PENDING,
 }
 
-const Home = (props) => {
-  useEffect(() => {}, [props.songs])
+const props = {}
 
+const Home = (props) => {
   let [playing, setPlaying] = useState(false)
 
   const [gameState, setGameState] = useLocalStorage('gameState', NewGameState)
@@ -60,9 +60,9 @@ const Home = (props) => {
   let [showStats, setShowStats] = useState(false)
 
   let [answer, setAnswer] = useState(() => {
-    let songs = props.songs
+    let animes = props.animes
 
-    let randomSong = songs[Math.floor(Math.random() * songs.length)]
+    let randomAnime = animes[Math.floor(Math.random() * animes.length)]
 
     function getDateDifference(e, a) {
       var s = new Date(e),
@@ -76,23 +76,19 @@ const Home = (props) => {
     today.setDate(today.getDate())
     //let daysSince = Math.floor(today.getMinutes() / 2)
     let daysSince = getDateDifference(baseDate, today)
-    let sotdIndex = daysSince % songs.length
-    let sotd = songs[sotdIndex]
-    //let sotd = randomSong
+    let aotdIndex = daysSince % animes.length
+    //let aotd = animes[aotdIndex]
+    let aotd = randomAnime
 
-    let offset = daysSince % (parseInt(sotd.duration / 1000) - 20)
-
-    var releaseDate = new Date(2022, 2, 26, 0, 0, 0, 0)
+    var releaseDate = new Date(2022, 3, 15, 0, 0, 0, 0)
     //let gameNumber = Math.floor(today.getMinutes() / 2)
     let gameNumber = getDateDifference(releaseDate, today)
+
     return {
       gameNumber,
-      ...sotd,
-      offset,
+      ...aotd,
     }
   })
-
-  const [url, setUrl] = useState()
 
   const [toastStatus, setToastStatus] = useState({
     text: '',
@@ -101,33 +97,7 @@ const Home = (props) => {
   })
 
   useEffect(() => {
-    function status(res) {
-      if (!res.ok) {
-        throw new Error(res.statusText)
-      }
-      return res
-    }
-
-    Promise.any([
-      fetch(
-        'https://tweardle.herokuapp.com/' +
-          answer.hlsUrl +
-          '?client_id=u8V3dqZ2Fiu0ciuXebiXDmUpKEeVEDmw&app_version=1647868284&app_locale=e'
-      ).then(status),
-      fetch(
-        'https://cores.bryanching.net/' +
-          answer.hlsUrl +
-          '?client_id=u8V3dqZ2Fiu0ciuXebiXDmUpKEeVEDmw&app_version=1647868284&app_locale=e'
-      ).then(status),
-    ])
-      .then((res) => res.json())
-      .then((data) => {
-        setUrl(data.url)
-      })
-  }, [answer.hlsUrl])
-
-  useEffect(() => {
-    if (answer.gameNumber != gameState.gameNumber) {
+    if (true || answer.gameNumber != gameState.gameNumber) {
       //reset game
       setGameState({ ...NewGameState, gameNumber: answer.gameNumber })
     }
@@ -139,38 +109,13 @@ const Home = (props) => {
     }
   }, [answer.gameNumber])
 
-  let handlePause = () => {
-    setPlaying(!playing)
-  }
-
-  let [player, setPlayer] = useState()
-
-  let ref = (player) => {
-    setPlayer(player)
-  }
-
-  let handleProgress = (state) => {
-    if (
-      state.playedSeconds - answer.offset >=
-        attemptLength[gameState.guesses.length] &&
-      gameState.status === STATUS_PENDING
-    ) {
-      setPlaying(false)
-    }
-  }
-
-  let handlePlay = (state) => {
-    if (gameState.status === STATUS_PENDING) player.seekTo(answer.offset)
-    else player.seekTo(0)
-  }
-
   let handleGuess = (guess) => {
     if (!guess) return
 
     let newGuesses = [...gameState.guesses, guess]
     let status = gameState.status
 
-    if (guess === answer.title) {
+    if (guess.romaji === answer.title.romaji) {
       //solved
       let newStats = [...stats]
       newStats[gameState.guesses.length]++
@@ -179,7 +124,7 @@ const Home = (props) => {
       setMaxStreak(Math.max(currentStreak + 1, maxStreak))
       status = STATUS_SOLVED
       setToastStatus({
-        text: 'Bust out the Candybong',
+        text: 'VoHiYo',
         show: true,
         bg: 'success',
       })
@@ -191,7 +136,7 @@ const Home = (props) => {
       setCurrentStreak(0)
       status = STATUS_FAILED
       setToastStatus({
-        text: 'Are you even a ONCE?',
+        text: 'Weebs Out',
         show: true,
         bg: 'danger',
       })
@@ -214,7 +159,7 @@ const Home = (props) => {
         `}</style>
 
         <Head>
-          <title>TWeardle {answer.gameNumber}</title>
+          <title>Aniguess {answer.gameNumber}</title>
         </Head>
 
         <main className={[styles.fill, 'container-md'].join(' ')}>
@@ -224,87 +169,118 @@ const Home = (props) => {
               onClickStats={() => setShowStats(true)}
             />
             <GuessList guesses={gameState.guesses} answer={answer.title} />
-            {gameState.status !== STATUS_PENDING && (
-              <>
-                <Card bg="secondary" className="p-2">
-                  <Stack
-                    direction="horizontal"
-                    gap={3}
-                    className="justify-content-around"
-                  >
-                    <Countdown />
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      onClick={() => {
-                        let shareText = `TWeardle (the other TWICE Heardle) ${gameState.gameNumber}\n\n`
-                        if (gameState.status === STATUS_SOLVED)
-                          shareText += '🔊'
-                        else shareText += '🔇'
-                        for (let i = 0; i < 6; i++) {
-                          let guess = gameState.guesses[i]
-                          if (!guess) shareText += '⬜'
-                          else if (guess === 'Skipped') shareText += '⬛'
-                          else if (guess === answer.title) shareText += '🟩'
-                          else shareText += '🟥'
-                        }
-                        shareText += '\nhttps://tweardle.bryanching.net/'
-                        navigator.clipboard.writeText(shareText)
-                        setToastStatus({
-                          text: 'Copied to clipboard',
-                          show: true,
-                          bg: 'info',
-                        })
-                      }}
-                    >
-                      Share <Icon.Share />
-                    </Button>
-                  </Stack>
-                </Card>
-
-                <Card bg="secondary" className="p-1">
-                  <Stack direction="horizontal" gap={3}>
-                    <Image
-                      thumbnail
-                      fluid
-                      style={{ height: '7rem' }}
-                      src={answer.artwork_url.replace('large', 't500x500')}
-                    />
-                    <div className="mx-auto">
-                      <h3>{answer.title + '\n'}</h3>
-                      <small className="text-muted">{answer.album}</small>
-                    </div>
-                  </Stack>
-                </Card>
-              </>
-            )}
-            {playerReady ? (
-              <div className="bg-dark p-3">
-                {gameState.status === STATUS_PENDING && (
-                  <Form>
-                    <Form.Group className="mb-3" controlId="formGuess">
-                      <Typeahead
-                        id="guess"
-                        onChange={(selected) => {
-                          setSelected(selected)
-                        }}
-                        maxResults={5}
-                        paginate={false}
-                        paginationText="get rid of me"
-                        options={props.titleList || []}
-                        placeholder="Guess"
-                        minLength={1}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            handleGuess(selected[0])
-                          }
-                        }}
-                        selected={selected}
-                        dropup={true}
-                      />
-                    </Form.Group>
-                  </Form>
+            <Card bg="secondary" className="p-2">
+              <Stack direction="horizontal" gap={3}>
+                {gameState.guesses.length >= 4 ? (
+                  <Image
+                    thumbnail
+                    fluid
+                    style={{ height: '12rem' }}
+                    src={answer.coverImage.extraLarge}
+                  />
+                ) : (
+                  <div
+                    className="bg-dark"
+                    style={{
+                      height: '12rem',
+                      width: '8rem',
+                    }}
+                  />
                 )}
+                <Stack gap={1}>
+                  {gameState.status !== STATUS_PENDING && (
+                    <h3>{answer.title.romaji}</h3>
+                  )}
+                  <h6>Genres:</h6>
+                  {gameState.status !== STATUS_PENDING ||
+                    (gameState.guesses.length >= 0 && (
+                      <h6>{answer.genres.join(', ')}</h6>
+                    ))}
+                  <h6>Season: </h6>
+                  {gameState.status !== STATUS_PENDING ||
+                  gameState.guesses.length >= 1 ? (
+                    <h6>
+                      {answer.season} {answer.seasonYear}
+                    </h6>
+                  ) : (
+                    <div className="bg-dark">&nbsp;</div>
+                  )}
+                  <h6>Studio:</h6>
+                  {gameState.status !== STATUS_PENDING ||
+                  gameState.guesses.length >= 2 ? (
+                    <h6>{answer.studios.edges[0].node.name}</h6>
+                  ) : (
+                    <div className="bg-dark">&nbsp;</div>
+                  )}
+                  <h6>Character:</h6>
+                  {gameState.status !== STATUS_PENDING ||
+                  gameState.guesses.length >= 3 ? (
+                    <h6>{answer.characters.edges[0].node.name.full}</h6>
+                  ) : (
+                    <div className="bg-dark">&nbsp;</div>
+                  )}
+                </Stack>
+              </Stack>
+              <h6>Synopsis:</h6>
+              {gameState.status !== STATUS_PENDING ||
+              gameState.guesses.length >= 5 ||
+              true ? (
+                <h6>
+                  {gameState.status !== STATUS_PENDING
+                    ? answer.description
+                    : answer.description.replace(/<i>(.|\n)*?<\/i>/, '_____')}
+                </h6>
+              ) : (
+                <div className="bg-dark" style={{ height: '3rem' }}>
+                  &nbsp;
+                </div>
+              )}
+            </Card>
+            {gameState.status === STATUS_PENDING && (
+              <div className="bg-dark p-3">
+                <Form>
+                  <Form.Group className="mb-3" controlId="formGuess">
+                    <Typeahead
+                      id="guess"
+                      labelKey={(title) => `${title.romaji} / ${title.english}`}
+                      renderMenuItemChildren={(option, { text }, index) => (
+                        <div>
+                          <Highlighter search={text}>
+                            {option.romaji}
+                          </Highlighter>
+                          <div>
+                            <small>
+                              <Highlighter search={text}>
+                                {option.english}
+                              </Highlighter>
+                            </small>
+                          </div>
+                        </div>
+                      )}
+                      onChange={(selected) => {
+                        setSelected(selected)
+                      }}
+                      maxResults={5}
+                      paginate={false}
+                      options={
+                        props.titleList.filter((title) => {
+                          return !gameState.guesses
+                            .map((title) => title.romaji)
+                            .includes(title.romaji)
+                        }) || []
+                      }
+                      placeholder="Guess"
+                      minLength={1}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleGuess(selected[0])
+                        }
+                      }}
+                      selected={selected}
+                      dropup={true}
+                    />
+                  </Form.Group>
+                </Form>
 
                 <Stack direction="horizontal" gap={3}>
                   {gameState.status === STATUS_PENDING && (
@@ -318,22 +294,6 @@ const Home = (props) => {
                     </Button>
                   )}
 
-                  {!playing ? (
-                    <Icon.PlayCircle
-                      size={50}
-                      role="button"
-                      className="mx-auto"
-                      onClick={handlePause}
-                    />
-                  ) : (
-                    <Icon.StopCircle
-                      size={50}
-                      role="button"
-                      className="mx-auto"
-                      onClick={handlePause}
-                    />
-                  )}
-
                   {gameState.status === STATUS_PENDING && (
                     <Button
                       variant="success"
@@ -344,28 +304,48 @@ const Home = (props) => {
                   )}
                 </Stack>
               </div>
-            ) : (
-              <Spinner animation="border" role="status" className="mx-auto">
-                <span className="visually-hidden">Loading...</span>
-              </Spinner>
+            )}
+
+            {gameState.status !== STATUS_PENDING && (
+              <>
+                <Card bg="secondary" className="p-2">
+                  <Stack
+                    direction="horizontal"
+                    gap={3}
+                    className="justify-content-around"
+                  >
+                    <Countdown />
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      onClick={() => {
+                        let shareText = `Aniguess ${gameState.gameNumber}\n\n`
+                        //if (gameState.status === STATUS_SOLVED)
+                          //shareText += '🔊'
+                        //else shareText += '🔇'
+                        for (let i = 0; i < 6; i++) {
+                          let guess = gameState.guesses[i]
+                          if (!guess) shareText += '⬜'
+                          else if (guess === 'Skipped') shareText += '⬛'
+                          else if (guess === answer.title) shareText += '🟩'
+                          else shareText += '🟥'
+                        }
+                        shareText += '\nhttps://aniguess.bryanching.net/'
+                        navigator.clipboard.writeText(shareText)
+                        setToastStatus({
+                          text: 'Copied to clipboard',
+                          show: true,
+                          bg: 'info',
+                        })
+                      }}
+                    >
+                      Share <Icon.Share />
+                    </Button>
+                  </Stack>
+                </Card>
+              </>
             )}
           </Stack>
-          <ReactPlayer
-            volume={0.25}
-            url={url}
-            ref={ref}
-            playing={playing}
-            style={{ display: 'none' }}
-            onProgress={handleProgress}
-            progressInterval={100}
-            onReady={() => {
-              setPlayerReady(true)
-            }}
-            onStart={() => {
-              player.seekTo(answer.offset)
-            }}
-            onPlay={handlePlay}
-          />
 
           <InfoModal
             show={showInfo}
@@ -405,11 +385,11 @@ const Home = (props) => {
 
 import fs from 'fs'
 export async function getStaticProps(context) {
-  let songs = JSON.parse(fs.readFileSync('songs.json'))
+  let animes = JSON.parse(fs.readFileSync('animes.json'))
   return {
     props: {
-      songs,
-      titleList: songs.map((song) => song.title),
+      animes,
+      titleList: animes.map((anime) => anime.title),
     },
   }
 }

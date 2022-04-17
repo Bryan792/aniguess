@@ -13,14 +13,7 @@ export default class Header extends React.Component {
             onClick={this.props.onClickInfo}
           />
           <Navbar.Brand href="/" className="mx-auto text-white">
-            <img
-              alt=""
-              src="https://upload.wikimedia.org/wikipedia/commons/e/ec/Logo_of_TWICE.svg"
-              width="30"
-              height="30"
-              className="d-inline-block align-top"
-            />{' '}
-            eardle
+            Aniguess
           </Navbar.Brand>
           <Icon.BarChartFill
             role="button"

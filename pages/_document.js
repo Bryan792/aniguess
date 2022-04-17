@@ -12,7 +12,7 @@ export default class MyDocument extends Document {
           <script
             async
             defer
-            data-website-id="0e366ed0-c658-4496-a1bc-1131393f2d73"
+            data-website-id="934eb586-73f2-448b-873d-50d01acef07c"
             src="https://tracking.bryanching.net/unagi.js"
           ></script>
         </body>

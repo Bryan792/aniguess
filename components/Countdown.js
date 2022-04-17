@@ -25,7 +25,7 @@ export default function Countdown() {
 
   return (
     <div>
-      <h6 className="text-center">Next TWeardle</h6>
+      <h6 className="text-center">Next Game</h6>
       {diff < 1 ? (
         <h3 className="text-center">Available</h3>
       ) : (

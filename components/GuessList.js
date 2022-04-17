@@ -4,14 +4,19 @@ import { Stack, Card } from 'react-bootstrap'
 function getCardBg(guess, answer) {
   if (!guess) return ''
   else if (guess === 'Skipped') return 'secondary'
-  else if (guess === answer) return 'success'
+  else if (answer.romaji === guess.romaji) return 'success'
   else return 'danger'
 }
 
 const Guess = ({ guess, answer, border }) => {
   return (
     <Card bg={getCardBg(guess, answer)} border={border}>
-      <Card.Body style={{ padding: '.75rem' }}>{guess}&nbsp;</Card.Body>
+      <Card.Body style={{ padding: '.25rem' }}>
+        <div>{guess && guess.romaji}&nbsp;</div>
+        <div>
+          <small>{guess && guess.english}</small>
+        </div>
+      </Card.Body>
     </Card>
   )
 }
